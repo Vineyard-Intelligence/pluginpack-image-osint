@@ -1,0 +1,63 @@
+{
+  "identifier": "run.vineyard.pluginpacks.image_osint",
+  "content_type": "vineyard:pluginpack",
+  "name": "Image OSINT",
+  "version": "1.0.0",
+  "description": "Browser-only image tools: reverse-image-search lead generation (Google Lens / Yandex / Bing / TinEye) and local EXIF/GPS extraction. No API keys, no server, and images never leave your machine.",
+  "author": {
+    "name": "vineyard-run",
+    "url": "https://github.com/vineyard-run"
+  },
+  "license": "Apache-2.0",
+  "icon": "image",
+  "platforms": {
+    "primary": "web",
+    "web": {
+      "runtime": "sandbox-js",
+      "entry": "inline"
+    }
+  },
+  "plugins": [
+    {
+      "identifier": "run.vineyard.plugins.reverse_image_search",
+      "content_type": "vineyard:plugin",
+      "name": "Reverse Image Search",
+      "version": "1.0.0",
+      "description": "For each selected URL (an image link), creates ready-to-click reverse-image-search leads — Google Lens, Yandex, Bing, TinEye — as URL nodes. No network call; you open the leads yourself.",
+      "icon": "image-search",
+      "platforms": { "primary": "web", "web": { "runtime": "sandbox-js", "entry": "inline" } },
+      "io": {
+        "consumes": [{ "typepack": "run.vineyard.typepacks.infrastructure", "category": "infrastructure", "name": "url" }],
+        "produces": [{ "typepack": "run.vineyard.typepacks.infrastructure", "category": "infrastructure", "name": "url" }]
+      },
+      "scopes": { "graph": ["node:read", "node:create", "edge:create"] },
+      "lifecycle": { "persistence": "opt-in", "controls": ["progress", "cancel"], "progress": "determinate" }
+    },
+    {
+      "identifier": "run.vineyard.plugins.exif_extract",
+      "content_type": "vineyard:plugin",
+      "name": "EXIF Extract",
+      "version": "1.0.0",
+      "description": "Reads a locally-chosen JPEG entirely in your browser: creates a File node with its SHA-256 and, if the photo carries GPS EXIF, a Location node. The image never leaves your machine — no network.",
+      "icon": "map-pin",
+      "platforms": { "primary": "web", "web": { "runtime": "sandbox-js", "entry": "inline" } },
+      "io": {
+        "consumes": [],
+        "produces": [
+          { "typepack": "run.vineyard.typepacks.endpoint", "category": "endpoint", "name": "file" },
+          { "typepack": "run.vineyard.typepacks.geo", "category": "geo", "name": "location" }
+        ]
+      },
+      "params": {
+        "type": "object",
+        "properties": {
+          "image": { "type": "string", "format": "data-url", "title": "Image file", "description": "A JPEG photo, read locally (never uploaded)." },
+          "filename": { "type": "string", "format": "file-name", "title": "File name" }
+        },
+        "required": ["image"]
+      },
+      "scopes": { "graph": ["node:create", "edge:create"] },
+      "lifecycle": { "persistence": "opt-in", "controls": ["progress"], "progress": "indeterminate" }
+    }
+  ]
+}
