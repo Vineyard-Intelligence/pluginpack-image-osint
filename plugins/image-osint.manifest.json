@@ -14,7 +14,7 @@
     "primary": "web",
     "web": {
       "runtime": "sandbox-js",
-      "entry": "inline"
+      "entry": "dist/pack.mjs"
     }
   },
   "plugins": [
@@ -23,41 +23,108 @@
       "content_type": "vineyard:plugin",
       "name": "Reverse Image Search",
       "version": "1.0.0",
-      "description": "For each selected URL (an image link), creates ready-to-click reverse-image-search leads — Google Lens, Yandex, Bing, TinEye — as URL nodes. No network call; you open the leads yourself.",
+      "description": "For each selected URL (an image link), creates ready-to-click reverse-image-search leads \u2014 Google Lens, Yandex, Bing, TinEye \u2014 as URL nodes. No network call; you open the leads yourself.",
       "icon": "image-search",
-      "platforms": { "primary": "web", "web": { "runtime": "sandbox-js", "entry": "inline" } },
-      "io": {
-        "consumes": [{ "typepack": "run.vineyard.typepacks.infrastructure", "category": "infrastructure", "name": "url" }],
-        "produces": [{ "typepack": "run.vineyard.typepacks.infrastructure", "category": "infrastructure", "name": "url" }]
+      "platforms": {
+        "primary": "web",
+        "web": {
+          "runtime": "sandbox-js",
+          "entry": "dist/pack.mjs"
+        }
       },
-      "scopes": { "graph": ["node:read", "node:create", "edge:create"] },
-      "lifecycle": { "persistence": "opt-in", "controls": ["progress", "cancel"], "progress": "determinate" }
+      "io": {
+        "consumes": [
+          {
+            "typepack": "run.vineyard.typepacks.infrastructure",
+            "category": "infrastructure",
+            "name": "url"
+          }
+        ],
+        "produces": [
+          {
+            "typepack": "run.vineyard.typepacks.infrastructure",
+            "category": "infrastructure",
+            "name": "url"
+          }
+        ]
+      },
+      "scopes": {
+        "graph": [
+          "node:read",
+          "node:create",
+          "edge:create"
+        ]
+      },
+      "lifecycle": {
+        "persistence": "opt-in",
+        "controls": [
+          "progress",
+          "cancel"
+        ],
+        "progress": "determinate"
+      }
     },
     {
       "identifier": "run.vineyard.plugins.exif_extract",
       "content_type": "vineyard:plugin",
       "name": "EXIF Extract",
       "version": "1.0.0",
-      "description": "Reads a locally-chosen JPEG entirely in your browser: creates a File node with its SHA-256 and, if the photo carries GPS EXIF, a Location node. The image never leaves your machine — no network.",
+      "description": "Reads a locally-chosen JPEG entirely in your browser: creates a File node with its SHA-256 and, if the photo carries GPS EXIF, a Location node. The image never leaves your machine \u2014 no network.",
       "icon": "map-pin",
-      "platforms": { "primary": "web", "web": { "runtime": "sandbox-js", "entry": "inline" } },
+      "platforms": {
+        "primary": "web",
+        "web": {
+          "runtime": "sandbox-js",
+          "entry": "dist/pack.mjs"
+        }
+      },
       "io": {
         "consumes": [],
         "produces": [
-          { "typepack": "run.vineyard.typepacks.endpoint", "category": "endpoint", "name": "file" },
-          { "typepack": "run.vineyard.typepacks.geo", "category": "geo", "name": "location" }
+          {
+            "typepack": "run.vineyard.typepacks.endpoint",
+            "category": "endpoint",
+            "name": "file"
+          },
+          {
+            "typepack": "run.vineyard.typepacks.geo",
+            "category": "geo",
+            "name": "location"
+          }
         ]
       },
       "params": {
         "type": "object",
         "properties": {
-          "image": { "type": "string", "format": "data-url", "title": "Image file", "description": "A JPEG photo, read locally (never uploaded)." },
-          "filename": { "type": "string", "format": "file-name", "title": "File name" }
+          "image": {
+            "type": "string",
+            "format": "data-url",
+            "title": "Image file",
+            "description": "A JPEG photo, read locally (never uploaded)."
+          },
+          "filename": {
+            "type": "string",
+            "format": "file-name",
+            "title": "File name"
+          }
         },
-        "required": ["image"]
+        "required": [
+          "image"
+        ]
       },
-      "scopes": { "graph": ["node:create", "edge:create"] },
-      "lifecycle": { "persistence": "opt-in", "controls": ["progress"], "progress": "indeterminate" }
+      "scopes": {
+        "graph": [
+          "node:create",
+          "edge:create"
+        ]
+      },
+      "lifecycle": {
+        "persistence": "opt-in",
+        "controls": [
+          "progress"
+        ],
+        "progress": "indeterminate"
+      }
     }
   ]
 }
