@@ -2,7 +2,7 @@
   "identifier": "run.vineyard.pluginpacks.image_osint",
   "content_type": "vineyard:pluginpack",
   "name": "Image OSINT",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Browser-only image tools: reverse-image-search lead generation (Google Lens / Yandex / Bing / TinEye) and local EXIF/GPS extraction. No API keys, no server, and images never leave your machine.",
   "author": {
     "name": "vineyard-run",
@@ -22,7 +22,7 @@
       "identifier": "run.vineyard.plugins.reverse_image_search",
       "content_type": "vineyard:plugin",
       "name": "Reverse Image Search",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "For each selected URL (an image link), creates ready-to-click reverse-image-search leads \u2014 Google Lens, Yandex, Bing, TinEye \u2014 as URL nodes. No network call; you open the leads yourself.",
       "icon": "image-search",
       "platforms": {
@@ -36,14 +36,14 @@
         "consumes": [
           {
             "typepack": "run.vineyard.typepacks.infrastructure",
-            "category": "infrastructure",
+            "category": "web",
             "name": "url"
           }
         ],
         "produces": [
           {
             "typepack": "run.vineyard.typepacks.infrastructure",
-            "category": "infrastructure",
+            "category": "web",
             "name": "url"
           }
         ]
