@@ -2,7 +2,7 @@
   "identifier": "run.vineyard.pluginpacks.image_osint",
   "content_type": "vineyard:pluginpack",
   "name": "Image OSINT",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Browser-only image tools: reverse-image-search lead generation (Google Lens / Yandex / Bing / TinEye) and local EXIF/GPS extraction. No API keys, no server, and images never leave your machine.",
   "author": {
     "name": "vineyard-run",
@@ -68,8 +68,8 @@
       "identifier": "run.vineyard.plugins.exif_extract",
       "content_type": "vineyard:plugin",
       "name": "EXIF Extract",
-      "version": "2.0.0",
-      "description": "Reads locally-chosen JPEGs entirely in your browser: creates a File node with its SHA-256 for each, and, if a photo carries GPS EXIF, a Location node. Pick one photo or a whole batch \u2014 one run, one review. The images never leave your machine \u2014 no network.",
+      "version": "2.1.0",
+      "description": "Reads locally-chosen JPEGs entirely in your browser. Each photo becomes a File node carrying its SHA-256 plus whatever EXIF holds \u2014 camera make/model, body serial, lens, capture time, software \u2014 and a photo with a GPS fix also gets a Location node. Pick one photo or a whole batch \u2014 one run, one review. The images never leave your machine \u2014 no network.",
       "icon": "map-pin",
       "platforms": {
         "primary": "web",
