@@ -20,48 +20,88 @@ assert.ok(exif, 'exif_extract missing from the bundle');
 
 // --- synthetic JPEGs -----------------------------------------------------------------------
 
-/** A little-endian Exif TIFF block whose IFD0 points at a GPS IFD holding lat/lon. */
-function tiffWithGps(latDeg, lonDeg, latRef = 'N', lonRef = 'E') {
-    const b = Buffer.alloc(128);
-    b.write('II', 0, 'ascii');
-    b.writeUInt16LE(42, 2);
-    b.writeUInt32LE(8, 4); // IFD0 at +8
-
-    b.writeUInt16LE(1, 8); // IFD0: one entry
-    b.writeUInt16LE(0x8825, 10); // GPSInfoIFDPointer
-    b.writeUInt16LE(4, 12); // LONG
-    b.writeUInt32LE(1, 14);
-    b.writeUInt32LE(26, 18); // -> GPS IFD at +26
-    b.writeUInt32LE(0, 22); // no next IFD
-
-    b.writeUInt16LE(4, 26); // GPS IFD: four entries
-    const entry = (i, tag, type, count, write) => {
-        const o = 28 + i * 12;
-        b.writeUInt16LE(tag, o);
-        b.writeUInt16LE(type, o + 2);
-        b.writeUInt32LE(count, o + 4);
-        write(o + 8);
-    };
-    entry(0, 0x0001, 2, 2, (o) => b.write(`${latRef}\0`, o, 'ascii')); // inline: 2 bytes <= 4
-    entry(1, 0x0002, 5, 3, (o) => b.writeUInt32LE(80, o)); // pointer: 3 rationals = 24 bytes
-    entry(2, 0x0003, 2, 2, (o) => b.write(`${lonRef}\0`, o, 'ascii'));
-    entry(3, 0x0004, 5, 3, (o) => b.writeUInt32LE(104, o));
-    b.writeUInt32LE(0, 76); // no next IFD
-
-    const dms = (off, deg) => {
+/**
+ * A little-endian Exif TIFF block: IFD0 (camera identity) + an Exif sub-IFD (timestamp, serial,
+ * lens) + a GPS sub-IFD. Every field is optional, so a photo with a camera and no fix — the case
+ * that used to lose everything — is expressible.
+ *
+ * Laid out in two passes because a value of 4 bytes or less lives INSIDE its 12-byte entry while
+ * anything longer is stored out of line and referenced by a TIFF-relative offset. Getting that
+ * wrong produces a file the parser reads as empty, which would make these assertions pass for the
+ * wrong reason.
+ */
+function buildTiff({ make, model, software, dateTime, serial, lens, gps } = {}) {
+    const ascii = (s) => Buffer.from(`${s}\0`, 'latin1');
+    const rational3 = (deg) => {
+        const b = Buffer.alloc(24);
         const d = Math.trunc(deg);
         const m = Math.round((deg - d) * 60);
-        b.writeUInt32LE(d, off);
-        b.writeUInt32LE(1, off + 4);
-        b.writeUInt32LE(m, off + 8);
-        b.writeUInt32LE(1, off + 12);
-        b.writeUInt32LE(0, off + 16);
-        b.writeUInt32LE(1, off + 20);
+        [d, 1, m, 1, 0, 1].forEach((v, i) => b.writeUInt32LE(v, i * 4));
+        return b;
     };
-    dms(80, latDeg);
-    dms(104, lonDeg);
+    const A = (tag, v) => (v ? [{ tag, type: 2, count: ascii(v).length, data: ascii(v) }] : []);
+
+    const ifd0 = [...A(0x010f, make), ...A(0x0110, model), ...A(0x0131, software)];
+    const exif = [...A(0x9003, dateTime), ...A(0xa431, serial), ...A(0xa434, lens)];
+    const gpsIfd = gps
+        ? [
+              ...A(0x0001, gps.lat >= 0 ? 'N' : 'S'),
+              { tag: 0x0002, type: 5, count: 3, data: rational3(Math.abs(gps.lat)) },
+              ...A(0x0003, gps.lon >= 0 ? 'E' : 'W'),
+              { tag: 0x0004, type: 5, count: 3, data: rational3(Math.abs(gps.lon)) },
+          ]
+        : [];
+
+    const ifdBytes = (n) => (n ? 2 + 12 * n + 4 : 0);
+    const ifd0Count = ifd0.length + (exif.length ? 1 : 0) + (gpsIfd.length ? 1 : 0);
+    const ifd0Off = 8;
+    const exifOff = ifd0Off + ifdBytes(ifd0Count);
+    const gpsOff = exifOff + ifdBytes(exif.length);
+    let dataOff = gpsOff + ifdBytes(gpsIfd.length);
+    const dataTotal = [...ifd0, ...exif, ...gpsIfd]
+        .filter((e) => e.data.length > 4)
+        .reduce((n, e) => n + e.data.length, 0);
+
+    const b = Buffer.alloc(dataOff + dataTotal);
+    b.write('II', 0, 'latin1');
+    b.writeUInt16LE(42, 2);
+    b.writeUInt32LE(ifd0Off, 4);
+
+    const writeIfd = (off, entries) => {
+        if (!entries.length) return;
+        b.writeUInt16LE(entries.length, off);
+        entries.forEach((e, i) => {
+            const o = off + 2 + i * 12;
+            b.writeUInt16LE(e.tag, o);
+            b.writeUInt16LE(e.type, o + 2);
+            b.writeUInt32LE(e.count, o + 4);
+            if (e.pointer !== undefined) b.writeUInt32LE(e.pointer, o + 8);
+            else if (e.data.length <= 4) e.data.copy(b, o + 8);
+            else {
+                b.writeUInt32LE(dataOff, o + 8);
+                e.data.copy(b, dataOff);
+                dataOff += e.data.length;
+            }
+        });
+        b.writeUInt32LE(0, off + 2 + entries.length * 12); // no next IFD
+    };
+
+    const ptr = (tag, target) => ({ tag, type: 4, count: 1, data: Buffer.alloc(4), pointer: target });
+    writeIfd(
+        ifd0Off,
+        [
+            ...ifd0,
+            ...(exif.length ? [ptr(0x8769, exifOff)] : []),
+            ...(gpsIfd.length ? [ptr(0x8825, gpsOff)] : []),
+        ],
+    );
+    writeIfd(exifOff, exif);
+    writeIfd(gpsOff, gpsIfd);
     return b;
 }
+
+/** The original shorthand, kept so the GPS-only cases read as before. */
+const tiffWithGps = (lat, lon) => buildTiff({ gps: { lat, lon } });
 
 function jpeg(tiff) {
     if (!tiff) return Buffer.from([0xff, 0xd8, 0xff, 0xd9]); // SOI + EOI, no Exif
@@ -153,9 +193,58 @@ const locNodes = (nodes) => nodes.filter((n) => n.type === 'geo.location');
     );
 }
 
+// Every EXIF field the parser reads must reach the File node, not just the GPS fix. This is the
+// regression that matters most: camera identity used to exist only in the run summary, and after
+// batching only the FIRST photo's, so importing 50 photos discarded 49 camera identities.
+{
+    const tiff = buildTiff({
+        make: 'NIKON CORPORATION',
+        model: 'NIKON D850',
+        software: 'Ver.1.01',
+        dateTime: '2026:03:14 09:26:53',
+        serial: '3012345',
+        lens: 'NIKKOR Z 24-70mm f/2.8 S',
+        gps: { lat: 37.5, lon: 127 },
+    });
+    const { ctx, nodes } = makeCtx([asFile('full.jpg', jpeg(tiff))]);
+    await exif.run(ctx);
+    const d = fileNodes(nodes)[0].data;
+    assert.equal(d.camera_make, 'NIKON CORPORATION');
+    assert.equal(d.camera_model, 'NIKON D850');
+    assert.equal(d.software, 'Ver.1.01');
+    assert.equal(d.taken_at, '2026:03:14 09:26:53');
+    assert.equal(d.camera_serial, '3012345', 'body serial is the tie between two photos and one camera');
+    assert.equal(d.lens_model, 'NIKKOR Z 24-70mm f/2.8 S');
+}
+
+// A photo with a camera but NO fix keeps its camera identity — the case that used to lose
+// everything, since the only surviving output was the Location node.
+{
+    const tiff = buildTiff({ make: 'Apple', model: 'iPhone 15 Pro', dateTime: '2026:01:02 03:04:05' });
+    const { ctx, nodes } = makeCtx([asFile('nogps.jpg', jpeg(tiff))]);
+    const out = await exif.run(ctx);
+    assert.equal(locNodes(nodes).length, 0, 'no GPS means no Location');
+    const d = fileNodes(nodes)[0].data;
+    assert.equal(d.camera_make, 'Apple');
+    assert.equal(d.camera_model, 'iPhone 15 Pro');
+    assert.equal(d.taken_at, '2026:01:02 03:04:05');
+    assert.deepEqual(out.counts, { files: 1, located: 0, unreadable: 0 });
+}
+
+// Absent tags must be ABSENT, not empty strings — an empty property renders as a blank row in the
+// inspector and reads as "we looked and there is nothing", which is a different claim.
+{
+    const { ctx, nodes } = makeCtx([asFile('bare.jpg', jpeg(null))]);
+    await exif.run(ctx);
+    const d = fileNodes(nodes)[0].data;
+    for (const k of ['camera_make', 'camera_model', 'lens_model', 'camera_serial', 'taken_at', 'software']) {
+        assert.ok(!(k in d), `${k} must be omitted when the photo has no EXIF, got ${JSON.stringify(d[k])}`);
+    }
+}
+
 // Southern/western hemisphere refs must flip the sign.
 {
-    const { ctx, nodes } = makeCtx([asFile('s.jpg', jpeg(tiffWithGps(33, 70, 'S', 'W')))]);
+    const { ctx, nodes } = makeCtx([asFile('s.jpg', jpeg(tiffWithGps(-33, -70)))]);
     await exif.run(ctx);
     const loc = locNodes(nodes)[0].data;
     assert.ok(loc.latitude < 0 && loc.longitude < 0, `expected southern/western, got ${loc.latitude},${loc.longitude}`);
