@@ -2,7 +2,7 @@
   "identifier": "run.vineyard.pluginpacks.image_osint",
   "content_type": "vineyard:pluginpack",
   "name": "Image OSINT",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Browser-only image tools: reverse-image-search lead generation (Google Lens / Yandex / Bing / TinEye) and local EXIF/GPS extraction. No API keys, no server, and images never leave your machine.",
   "author": {
     "name": "vineyard-run",
@@ -68,8 +68,8 @@
       "identifier": "run.vineyard.plugins.exif_extract",
       "content_type": "vineyard:plugin",
       "name": "EXIF Extract",
-      "version": "1.0.0",
-      "description": "Reads a locally-chosen JPEG entirely in your browser: creates a File node with its SHA-256 and, if the photo carries GPS EXIF, a Location node. The image never leaves your machine \u2014 no network.",
+      "version": "2.0.0",
+      "description": "Reads locally-chosen JPEGs entirely in your browser: creates a File node with its SHA-256 for each, and, if a photo carries GPS EXIF, a Location node. Pick one photo or a whole batch \u2014 one run, one review. The images never leave your machine \u2014 no network.",
       "icon": "map-pin",
       "platforms": {
         "primary": "web",
@@ -96,20 +96,16 @@
       "params": {
         "type": "object",
         "properties": {
-          "image": {
-            "type": "string",
-            "format": "data-url",
-            "title": "Image file",
-            "description": "A JPEG photo, read locally (never uploaded)."
-          },
-          "filename": {
-            "type": "string",
-            "format": "file-name",
-            "title": "File name"
+          "images": {
+            "type": "array",
+            "format": "file",
+            "accept": "image/*",
+            "title": "Image files",
+            "description": "One or more JPEG photos, read locally (never uploaded)."
           }
         },
         "required": [
-          "image"
+          "images"
         ]
       },
       "scopes": {
@@ -121,9 +117,10 @@
       "lifecycle": {
         "persistence": "opt-in",
         "controls": [
-          "progress"
+          "progress",
+          "cancel"
         ],
-        "progress": "indeterminate"
+        "progress": "determinate"
       }
     }
   ]
