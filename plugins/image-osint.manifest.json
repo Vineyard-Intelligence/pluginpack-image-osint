@@ -6,7 +6,7 @@
   "description": "Browser-only image tools: reverse-image-search lead generation (Google Lens / Yandex / Bing / TinEye) and local EXIF/GPS extraction. No API keys, no server, and images never leave your machine.",
   "author": {
     "name": "VINEYARD",
-    "url": "https://github.com/vineyard-run"
+    "url": "https://github.com/Vineyard-Intelligence"
   },
   "license": "Apache-2.0",
   "icon": "image",
