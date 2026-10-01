@@ -2,7 +2,7 @@
   "identifier": "run.vineyard.pluginpacks.image_osint",
   "content_type": "vineyard:pluginpack",
   "name": "Image OSINT",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Extracts EXIF metadata and GPS location from photos, parsed locally without uploading them.",
   "author": {
     "name": "VINEYARD",
@@ -22,7 +22,7 @@
       "identifier": "run.vineyard.plugins.exif_extract",
       "content_type": "vineyard:plugin",
       "name": "EXIF Extract",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "description": "Reads photos picked in the Run dialog (no selection), locally without uploading them. Creates a File node per photo with its SHA-256 and, for JPEGs, EXIF fields (camera make/model, body serial, lens, capture time, software), plus a Location node linked \"captured at\" when the photo has GPS coordinates.",
       "icon": "map-pin",
       "platforms": {
@@ -55,7 +55,7 @@
             "format": "file",
             "accept": "image/*",
             "title": "Image files",
-            "description": "One or more JPEG photos, read locally (never uploaded)."
+            "description": "One or more image files; EXIF and GPS are read from JPEGs only."
           }
         },
         "required": [
