@@ -19,6 +19,17 @@ One plugin:
 ## Layout
 
 - `plugins/image-osint.manifest.json` — the pack manifest (catalog entry source).
+- `src/` — the source of the bundle.
 - `dist/` — runnable bundle.
 
 No external data sources: EXIF is parsed entirely in the browser. No credentials, no cost, no uploads.
+
+## Building from source
+
+`src/` is the source of `dist/pack.mjs`. The build pins esbuild, so the published bundle can be
+checked against the source:
+
+```bash
+node build.mjs
+git diff --exit-code dist/pack.mjs
+```
