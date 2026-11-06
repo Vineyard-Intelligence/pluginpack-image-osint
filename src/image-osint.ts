@@ -281,7 +281,7 @@ export default definePluginPack({
     identifier: 'run.vineyard.pluginpacks.image_osint',
     content_type: 'vineyard:pluginpack',
     name: 'Image OSINT',
-    version: '1.4.1',
+    version: '1.4.2',
     description: 'Extracts EXIF metadata and GPS location from photos, parsed locally without uploading them.',
     plugins: [exifExtract],
 });
