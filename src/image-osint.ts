@@ -277,11 +277,45 @@ const exifExtract = definePlugin({
     },
 });
 
+// The pack's page in the catalog, in Markdown: the About section the marketplace drawer shows
+// below the one-line `summary`. Kept as an array of lines rather than a template literal so the
+// Markdown's backticks need no escaping.
+const PACK_PAGE = [
+    "For turning photos an analyst already holds into graph nodes: the camera that took them, when, and where, where the file still says so. Images are read and parsed inside Vineyard's plugin sandbox; the pack has no network access, so the image never leaves the analyst's machine.",
+    '',
+    '## Plugins',
+    '',
+    '### EXIF Extract',
+    '',
+    '- **Runs on:** image files picked in the Run dialog, one or many in a single run. It needs no selected node.',
+    "- **Adds a File node per photo** with its `sha256`, `mime_type` and `size_bytes`. The node's `file_name` is the original name followed by the first 12 characters of the hash, so two different photos named `IMG_1234.JPG` stay separate, and the same file picked twice gives one node.",
+    '- **For JPEGs with EXIF**, the File node also gets what the photo records: `camera_make`, `camera_model`, `lens_model`, `camera_serial` (the body serial number, which ties photos to one physical camera), `taken_at` (the original capture time when present) and `software`.',
+    '- **Adds a Location node** (latitude, longitude, named by the coordinates) linked `captured at` when the photo carries a GPS position. A GPS block with no hemisphere reference is treated as empty rather than as a position at 0, 0.',
+    '- **Limits:** EXIF and GPS are read from JPEG files only. Other images, and JPEGs without EXIF, still get a hashed File node. A file that cannot be read is counted in the run summary and the rest of the batch continues.',
+    '',
+    'The image itself is not stored in the graph, only the fields above.',
+    '',
+    '## Requirements',
+    '',
+    'None: no API key, no account, no server.',
+    '',
+    '## What it contacts',
+    '',
+    'Nothing. The plugin declares no network scope, so it cannot make requests. Hashing and EXIF parsing happen locally in the sandbox.',
+    '',
+    '## Source',
+    '',
+    'https://github.com/Vineyard-Intelligence/pluginpack-image-osint',
+    '',
+    'Licensed Apache-2.0. The bundle `dist/pack.mjs` is built from `src/` with a pinned esbuild, so it can be rebuilt and compared with `node build.mjs && git diff --exit-code dist/pack.mjs`. `node verify.mjs` runs the built bundle against synthetic JPEGs.',
+].join('\n');
+
 export default definePluginPack({
     identifier: 'run.vineyard.pluginpacks.image_osint',
     content_type: 'vineyard:pluginpack',
     name: 'Image OSINT',
-    version: '1.4.2',
-    description: 'Extracts EXIF metadata and GPS location from photos, parsed locally without uploading them.',
+    version: '1.5.0',
+    summary: 'Extracts EXIF metadata and GPS location from photos, parsed locally without uploading them.',
+    description: PACK_PAGE,
     plugins: [exifExtract],
 });
